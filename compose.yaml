@@ -1,0 +1,35 @@
+# Hausfunk local stack (Podman Compose). Reads .env for variable interpolation.
+# Phase 0: Icecast + Liquidsoap; the orchestrator container follows in a later phase.
+name: hausfunk
+
+services:
+  icecast:
+    image: docker.io/libretime/icecast:2.4.4
+    ports:
+      - "8000:8000"
+    environment:
+      ICECAST_SOURCE_PASSWORD: ${HAUSFUNK_ICECAST__SOURCE_PASSWORD:?set HAUSFUNK_ICECAST__SOURCE_PASSWORD in .env}
+      ICECAST_ADMIN_PASSWORD: ${HAUSFUNK_ICECAST__ADMIN_PASSWORD:?set HAUSFUNK_ICECAST__ADMIN_PASSWORD in .env}
+      ICECAST_RELAY_PASSWORD: ${HAUSFUNK_ICECAST__ADMIN_PASSWORD}
+      ICECAST_HOSTNAME: ${ICECAST_HOSTNAME:-localhost}
+      ICECAST_MAX_SOURCES: "16"
+
+  liquidsoap:
+    # Tag not yet verified on Docker Hub; v2.4.6 is the latest 2.4.x release (2026-10-08).
+    image: docker.io/savonet/liquidsoap:v2.4.6
+    entrypoint: ["liquidsoap"]
+    command: ["/radio/radio.liq"]
+    depends_on:
+      - icecast
+    environment:
+      ICECAST_HOST: icecast
+      ICECAST_PORT: "8000"
+      ICECAST_SOURCE_PASSWORD: ${HAUSFUNK_ICECAST__SOURCE_PASSWORD}
+      LIQUIDSOAP_CHANNELS: ${LIQUIDSOAP_CHANNELS:-hausfunk}
+      TEST_MEDIA_DIR: /media/test
+    volumes:
+      - ./liquidsoap:/radio:ro,Z
+      - ./media:/media:ro,Z
+    ports:
+      # Control interface has no authentication: bind to localhost only.
+      - "127.0.0.1:1234:1234"

@@ -1,0 +1,65 @@
+# Hausfunk example configuration. Copy to config/hausfunk.yaml (or point HAUSFUNK_CONFIG at it).
+# URLs can live here or in env; secrets (API keys, passwords, tokens) must come from env
+# or *_FILE, never from this file. Any value here can be overridden by env, e.g.
+# HAUSFUNK_DIRECTOR__MODEL=claude-opus-5-5
+
+tts:
+  provider: piper
+
+director:
+  model: claude-sonnet-5-5
+  bulk_model: claude-haiku-5-5
+
+profiles:
+  - id: chris
+    name: Chris
+    banned_genres: [schlager]
+    preferred_genres: {melodic techno: 1.0, deep house: 0.8, ambient: 0.4}
+  - id: household
+    name: Household
+    preferred_genres: {pop: 0.6, indie: 0.6, jazz: 0.4}
+
+personas:
+  - id: host-calm
+    role: host
+    style: Relaxed late-night host, short links, dry humour.
+    voices:
+      en: {provider: piper, voice: en_US-lessac-medium}
+      de: {provider: piper, voice: de_DE-thorsten-medium}
+  - id: anchor
+    role: news
+    style: Calm, factual news anchor.
+    voices:
+      en: {provider: piper, voice: en_US-ryan-medium}
+      de: {provider: piper, voice: de_DE-thorsten-medium}
+  - id: storyteller
+    role: storyteller
+    style: Warm, unhurried storyteller.
+    voices:
+      de: {provider: piper, voice: de_DE-thorsten-medium}
+
+news_feeds:
+  - {topic: tech, url: "https://www.heise.de/rss/heise-atom.xml", language: de}
+  - {topic: world, url: "https://feeds.bbci.co.uk/news/world/rss.xml", language: en}
+
+channels:
+  - slug: hausfunk
+    name: Hausfunk
+    language: de
+    taste: {profiles: [chris, household]}
+    personas: {host: host-calm, news: anchor, storyteller: storyteller}
+    news_topics: [tech, world]
+    silence: {start: "01:00", end: "07:00"}
+    programmes:
+      - name: Klassikstunde
+        window: {start: "20:00", end: "21:00"}
+        genres: [classical]
+      - name: Gute-Nacht-Geschichte
+        window: {start: "21:00", end: "21:15"}
+        story: true
+
+  - slug: nachtschicht-fm
+    name: Nachtschicht FM
+    language: en
+    taste: {profiles: [chris], genres: [melodic techno, deep house, ambient]}
+    personas: {host: host-calm}
